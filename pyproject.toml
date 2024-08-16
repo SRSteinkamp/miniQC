@@ -1,0 +1,103 @@
+[build-system]
+requires = ["setuptools >= 30.0.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["miniqc"]
+
+[project]
+name = "miniqc"
+version = "0.0.1"
+authors = [
+    { name = "Simon R. Steinkamp", email= "rewardgym@mailbox.org" },
+    ]
+description = "A lightweight python gui for minimal quality control of fMRI images."
+readme = "README.rst"
+license = {file = "LICENSE"}
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intendend Audience :: Research/Science",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+]
+requires-python = ">= 3.8"
+
+dependencies = [
+    "pandas",
+    "matplotlib",
+    "nibabel",
+    "pybids",
+    "numpy",
+    "tqdm"
+]
+
+[project.optional-dependencies]
+doc = [
+    "sphinx>=2.0",
+    "sphinx-argparse",
+    "sphinx_rtd_theme",
+    "myst-parser",
+    "nbsphinx",
+    "sphinxcontrib-bibtex",
+    "jupytext",
+    "nbsphinx_link"
+]
+style = [
+    "ruff",
+    "isort",
+    "pydocstyle",
+    "codespell"
+]
+test = [
+    "rewardgym[style]",
+    "pytest>=5.3",
+    "pytest-cov",
+    "coverage"
+]
+devtools = [
+    "pre-commit",
+    "jupyter"
+]
+dev = ["miniqc[devtools,docs,tests]"]
+
+
+[project.scripts]
+miniqc = "miniqc.miniqc:miniqc_gui"
+
+[tool.pytest.ini_options]
+doctest_optionflags = "NORMALIZE_WHITESPACE"
+xfail_strict = true
+addopts = "-rx"
+
+[tool.isort]
+profile = "black"
+skip_gitignore = true
+extend_skip = [
+    ".autorc",
+    ".coverage*",
+    ".readthedocs.yml",
+    ".zenodo.json",
+    "codecov.yml",
+    "setup.py",
+    "versioneer.py",
+    "miniqc/_version.py"
+]
+skip_glob = ["docs/*"]
+
+[tool.pydocstyle]
+convention = "numpy"
+match = "miniqc/*.py"
+match-dir = "miniqc/[^tests]*"
+
+[tool.codespell]
+skip = [".git", "build", "./docs/_build"]
+ignore-words-list = [""]
+write-changes = true
+count = true
+quiet-level = 3
+
+[tool.ruff.lint.per-file-ignores]
+"rewardgym/tests/*" = ["E712"]
+"notebooks/*" = ["E402"]
