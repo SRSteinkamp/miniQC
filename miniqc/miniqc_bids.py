@@ -6,7 +6,7 @@ from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 
 from .application import App
-from .fmri_plots import load_prepare_bold
+from .fmri_plots import load_prepare_anat, load_prepare_bold
 
 
 def create_bids_parser():
@@ -124,11 +124,16 @@ def miniqc_gui():
     if len(bids_images) == 0:
         raise ValueError("Something went wrong")
 
-    results = Parallel(n_jobs=args.njobs)(
-        delayed(load_prepare_bold)(i, cmap, args.plot)
-        for i in tqdm(bids_images, desc="loading images")
-    )
-
+    if args.modality == "func":
+        results = Parallel(n_jobs=args.njobs)(
+            delayed(load_prepare_bold)(i, cmap, args.plot)
+            for i in tqdm(bids_images, desc="loading images")
+        )
+    elif args.modality == "anat":
+        results = Parallel(n_jobs=args.njobs)(
+            delayed(load_prepare_anat)(i, cmap)
+            for i in tqdm(bids_images, desc="loading images")
+        )
     image_array = {}
     for res in results:
         image_array[res[0]] = [res[1], res[2]]

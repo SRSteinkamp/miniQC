@@ -101,3 +101,16 @@ def load_prepare_bold(fpath, cmap, plot_type="mean"):
     middle_dims = get_middle_slice(single_img)
 
     return [fname, single_img.astype(np.uint8), middle_dims]
+
+
+def load_prepare_anat(fpath, cmap):
+    single_img = nb.load(fpath)
+    fname = fpath.split(os.sep)[-1]
+    pad_dim = padding_dims(single_img)
+
+    single_img = apply_colormap_to_2d_array(single_img, cmap) * 255
+    single_img = padding(single_img, pad_dim)
+
+    middle_dims = get_middle_slice(single_img)
+
+    return [fname, single_img.astype(np.uint8), middle_dims]
