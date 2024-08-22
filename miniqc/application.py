@@ -7,14 +7,17 @@ from tkinter import ttk
 from PIL import Image, ImageTk
 
 
+def rgb_2_hex(rgb):
+    return "#{:02x}{:02x}{:02x}".format(*rgb)
+
+
 class App(tk.Tk):
     def __init__(self, data_dict, output=None):
         super().__init__()
 
-        self.title("Test")
+        self.title("miniQC - v0.0.1")
         self.gen_height = 900
         self.gen_width = 1600
-        print(f"{self.gen_width}x{self.gen_height}")
         self.geometry(f"{self.gen_width}x{self.gen_height}")
         self.resizable(False, False)
 
@@ -25,7 +28,7 @@ class App(tk.Tk):
 
         self.image_height = (self.gen_height - 200) // 2
         self.image_width = (self.gen_width - 180) // 3
-        print(self.image_height, self.image_width)
+
         self.columnconfigure(0, weight=1, minsize=100)
         self.columnconfigure(1, weight=5, minsize=self.image_width)
         self.columnconfigure(2, weight=5, minsize=self.image_width)
@@ -37,17 +40,29 @@ class App(tk.Tk):
         self.rowconfigure(2, weight=1, minsize=50)
         self.rowconfigure(3, weight=3, minsize=self.image_height)
 
-        self.label_test = ttk.Label(self, text="Hello world")
-        self.label_test.grid(row=0, column=0)
+        self.subject_label = ttk.Label(
+            self, text="First image", font=("TkDefaultFont", 25)
+        )
+        self.subject_label.grid(
+            row=0, column=1, padx=10, pady=10, columnspan=2, sticky="w"
+        )
 
-        self.subject_label = ttk.Label(self, text="First image")
-        self.subject_label.grid(row=0, column=2, padx=10, pady=10)
+        self.rating_label = tk.Label(
+            self,
+            text="Rating:\nNone",
+            bg=rgb_2_hex((75, 75, 75)),
+            height=80,
+            width=100,
+            font=("TkDefaultFont", 25),
+        )
+        self.rating_label.grid(row=0, column=3, padx=20, pady=20)
 
-        self.rating_label = ttk.Label(self, text="Rating:\nNone")
-        self.rating_label.grid(row=0, column=3, padx=10, pady=10)
-
-        self.reference_label = ttk.Label(self, text="Reference:")
-        self.reference_label.grid(row=2, column=2, padx=10, pady=10)
+        self.reference_label = ttk.Label(
+            self, text="Reference:", font=("TkDefaultFont", 25)
+        )
+        self.reference_label.grid(
+            row=2, column=1, padx=10, pady=10, columnspan=2, stick="W"
+        )
 
         self.save_button = ttk.Button(self, text="Save", command=self.save_results)
         self.save_button.grid(row=3, column=0, padx=10, pady=10)
@@ -56,30 +71,30 @@ class App(tk.Tk):
         self.index = 0
 
         self.color_dict = {
-            "Bad": "red",
-            "?": "yellow",
-            "Good": "green",
+            "Bad": rgb_2_hex((252, 141, 98)),
+            "?": rgb_2_hex((255, 217, 47)),
+            "Good": rgb_2_hex((102, 194, 165)),
             "None": "white",
         }
 
         # Create labels to display the three planes
         self.label_xy = ttk.Label(self)
-        self.label_xy.grid(row=1, column=1, padx=10, pady=10)
+        self.label_xy.grid(row=1, column=1, padx=5, pady=5)
 
         self.label_yz = ttk.Label(self)
-        self.label_yz.grid(row=1, column=2, padx=10, pady=10)
+        self.label_yz.grid(row=1, column=2, padx=5, pady=5)
 
         self.label_xz = ttk.Label(self)
-        self.label_xz.grid(row=1, column=3, padx=10, pady=10)
+        self.label_xz.grid(row=1, column=3, padx=5, pady=5)
 
         self.ref_xy = ttk.Label(self)
-        self.ref_xy.grid(row=3, column=1, padx=10, pady=10)
+        self.ref_xy.grid(row=3, column=1, padx=5, pady=5)
 
         self.ref_yz = ttk.Label(self)
-        self.ref_yz.grid(row=3, column=2, padx=10, pady=10)
+        self.ref_yz.grid(row=3, column=2, padx=5, pady=5)
 
         self.ref_xz = ttk.Label(self)
-        self.ref_xz.grid(row=3, column=3, padx=10, pady=10)
+        self.ref_xz.grid(row=3, column=3, padx=5, pady=5)
 
         # Bind left and right arrow keys to methods
         self.bind("<Left>", self.previous_image)
@@ -97,9 +112,9 @@ class App(tk.Tk):
 
         tmp_image, tmp_slice = self.data_dict[self.labels[self.index]]
 
-        image_xy = tmp_image[tmp_slice[0], :, ::-1]  # XY plane
-        image_yz = tmp_image[:, tmp_slice[1], ::-1]  # YZ plane
-        image_xz = tmp_image[:, ::-1, tmp_slice[2]]  # XZ plane
+        image_xy = tmp_image[tmp_slice[0], :, ::-1].transpose([1, 0, 2])  # XY plane
+        image_yz = tmp_image[:, tmp_slice[1], ::-1].transpose([1, 0, 2])  # YZ plane
+        image_xz = tmp_image[:, ::-1, tmp_slice[2]].transpose([1, 0, 2])  # XZ plane
 
         img_xy = Image.fromarray(image_xy)
         img_xy = img_xy.resize(size=(self.image_width, self.image_height))
@@ -147,7 +162,7 @@ class App(tk.Tk):
         self.ref_yz.configure(image=self.ref_yz_image)
         self.ref_xz.configure(image=self.ref_xz_image)
 
-        self.reference_label.configure(text=self.labels[self.index])
+        self.reference_label.configure(text=f"Reference: {self.labels[self.index]}")
 
     def update_label(self):
         self.subject_label.configure(text=self.labels[self.index])
@@ -160,7 +175,7 @@ class App(tk.Tk):
         cur_rating = self.ratings[self.labels[self.index]]
 
         self.rating_label.configure(
-            text=f"Rating:\n{cur_rating}", foreground=self.color_dict[cur_rating]
+            text=f"Rating:\n{cur_rating}", fg=self.color_dict[cur_rating]
         )
 
     def neutral_rating(self, event):

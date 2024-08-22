@@ -1,3 +1,6 @@
+import os
+
+import nibabel as nb
 import numpy as np
 
 
@@ -80,3 +83,21 @@ def apply_colormap_to_2d_array(array_3d, cmap):
         array_4d[i] = array_3d_rgb
 
     return array_4d
+
+
+def load_prepare_bold(fpath, cmap, plot_type="mean"):
+    single_img = nb.load(fpath)
+    fname = fpath.split(os.sep)[-1]
+    pad_dim = padding_dims(single_img)
+
+    if plot_type == "mean":
+        single_img = mean_img(single_img.get_fdata())
+    elif plot_type == "std":
+        single_img = std_img(single_img.get_fdata())
+
+    single_img = apply_colormap_to_2d_array(single_img, cmap) * 255
+    single_img = padding(single_img, pad_dim)
+
+    middle_dims = get_middle_slice(single_img)
+
+    return [fname, single_img.astype(np.uint8), middle_dims]

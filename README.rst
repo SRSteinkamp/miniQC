@@ -2,7 +2,9 @@
 miniQC
 ==================================
 
-miniQC is supposed to be minimalistic lightweight tool for quick quality control of
+miniQC is a minimalistic tool for quick quality control of
 fMRI and MRI (not yet supported) images.
 
-Using a python GUI it allows for quick flipping nifti images.
+There are currently two command line interfaces for miniQC:
+
+``miniqc_bids`` and ``miniqc_glob``.

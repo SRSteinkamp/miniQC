@@ -2,19 +2,11 @@ import argparse
 
 import bids
 import matplotlib.pyplot as plt
-import nibabel as nb
-import numpy as np
+from joblib import Parallel, delayed
 from tqdm.auto import tqdm
 
 from .application import App
-from .fmri_plots import (
-    apply_colormap_to_2d_array,
-    get_middle_slice,
-    mean_img,
-    padding,
-    padding_dims,
-    std_img,
-)
+from .fmri_plots import load_prepare_bold
 
 
 def create_bids_parser():
@@ -49,6 +41,12 @@ def create_bids_parser():
         help="Select a specific run to be analyzed. If this parameter is not provided all runs should be analyzed.",
     )
     parser.add_argument(
+        "--space_id",
+        type=str,
+        default=None,
+        help="Select a specific run to be analyzed. If this parameter is not provided all runs should be analyzed.",
+    )
+    parser.add_argument(
         "--modality",
         type=str,
         choices=["anat", "fmri"],
@@ -71,7 +69,25 @@ def create_bids_parser():
     parser.add_argument(
         "--colormap",
         type=str,
-        default="Greys",
+        default="Greys_r",
+        help="Specify the plot to be analyzed. Default is 'fmri'.",
+    )
+    parser.add_argument(
+        "--njobs",
+        type=int,
+        default=5,
+        help="Specify the plot to be analyzed. Default is 'fmri'.",
+    )
+    parser.add_argument(
+        "--image_index_first",
+        type=int,
+        default=0,
+        help="Specify the plot to be analyzed. Default is 'fmri'.",
+    )
+    parser.add_argument(
+        "--image_index_last",
+        type=int,
+        default=-1,
         help="Specify the plot to be analyzed. Default is 'fmri'.",
     )
     return parser
@@ -80,12 +96,6 @@ def create_bids_parser():
 def miniqc_gui():
     parser = create_bids_parser()
     args = parser.parse_args()
-    print(args)
-    # Print parsed arguments for debugging purposes
-
-    print("Parsed arguments:")
-    for arg in vars(args):
-        print(f"{arg}: {getattr(args, arg)}")
 
     dict_args = vars(args)
 
@@ -96,37 +106,32 @@ def miniqc_gui():
 
     file_filter = {
         i: dict_args[i + "_id"]
-        for i in ["task", "run", "session"]
+        for i in ["task", "run", "session", "space"]
         if dict_args[i + "_id"] is not None
     }
 
-    print(file_filter)
-
     bids_data = bids.BIDSLayout(args.bids_dir, validate=False)
-    print(bids_data)
-    bids_images = bids_data.get(suffix=modality, extension=args.extension)
-    print(bids_images)
+    if len(file_filter) > 0:
+        bids_images = bids_data.get(
+            suffix=modality, extension=args.extension, filters=file_filter
+        )
+    else:
+        bids_images = bids_data.get(suffix=modality, extension=args.extension)
+
+    bids_images = [i.path for i in bids_images]
+    bids_images = bids_images[args.image_index_first : args.image_index_last]
+
     if len(bids_images) == 0:
         raise ValueError("Something went wrong")
 
+    results = Parallel(n_jobs=args.njobs)(
+        delayed(load_prepare_bold)(i, cmap, args.plot)
+        for i in tqdm(bids_images, desc="loading images")
+    )
+
     image_array = {}
-    for ii in tqdm(bids_images[:4], desc="loading images"):
-        single_img = nb.load(ii)
-        pad_dim = padding_dims(single_img)
-
-        if args.plot == "mean":
-            single_img = mean_img(single_img.get_fdata())
-        elif args.plot == "std":
-            single_img = std_img(single_img.get_fdata())
-
-        # single_img = single_img / np.max(np.abs(single_img))
-
-        single_img = apply_colormap_to_2d_array(single_img, cmap) * 255
-        single_img = padding(single_img, pad_dim)
-
-        middle_dims = get_middle_slice(single_img)
-
-        image_array[ii.filename] = [single_img.astype(np.uint8), middle_dims]
+    for res in results:
+        image_array[res[0]] = [res[1], res[2]]
 
     app = App(image_array, args.output_dir)
     app.mainloop()

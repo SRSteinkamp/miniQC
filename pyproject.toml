@@ -30,7 +30,8 @@ dependencies = [
     "nibabel",
     "pybids",
     "numpy",
-    "tqdm"
+    "tqdm",
+    "joblib"
 ]
 
 [project.optional-dependencies]
@@ -64,7 +65,8 @@ dev = ["miniqc[devtools,docs,tests]"]
 
 
 [project.scripts]
-miniqc = "miniqc.miniqc:miniqc_gui"
+miniqc_bids = "miniqc.miniqc_bids:miniqc_gui"
+miniqc_glob = "miniqc.miniqc_glob:miniqc_gui"
 
 [tool.pytest.ini_options]
 doctest_optionflags = "NORMALIZE_WHITESPACE"
