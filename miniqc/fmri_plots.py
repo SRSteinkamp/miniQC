@@ -108,7 +108,7 @@ def load_prepare_anat(fpath, cmap):
     fname = fpath.split(os.sep)[-1]
     pad_dim = padding_dims(single_img)
 
-    single_img = apply_colormap_to_2d_array(single_img, cmap) * 255
+    single_img = apply_colormap_to_2d_array(single_img.get_fdata(), cmap) * 255
     single_img = padding(single_img, pad_dim)
 
     middle_dims = get_middle_slice(single_img)
